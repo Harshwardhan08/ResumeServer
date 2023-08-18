@@ -3,10 +3,13 @@ const express = require("express");
 const path = require("path");
 const errorHandler = require('./middleware/errorHandler');
 const cookieParser = require('cookie-parser');
-const cors = require('cors')
+const cors = require('cors');
+const connectDB = require('./dbConnection');
+const mongoose = require('mongoose')
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+connectDB();
 //-cors
 const allowedOrigins = [
     'http://localhost:3000'
@@ -25,12 +28,12 @@ const corsOptions = {
 //cors-
 
 app.use('/', express.static('static'));
-app.use(cors(corsOptions))
-app.use(express.json())
-app.use(cookieParser())
-// app.use('/', express.static(path.join(__dirname, 'public')))
-app.use('/', require('./routes/index'))
-
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(cookieParser());
+app.use('/', require('./routes/index'));
+app.use('/users', require('./routes/userRoutes'));
+app.use('/login', require('./routes/loginRoutes'));
 app.all('*', (req, res) => {
     res.status(404)
     if (req.accepts('html')) {
@@ -42,4 +45,11 @@ app.all('*', (req, res) => {
     }
 })
 app.use(errorHandler)
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+mongoose.connection.once('open', () => {
+    console.log("MongoDB connected!")
+    app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+})
+
+mongoose.connection.on('error', err => {
+    console.log(err);
+})
